@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unicode Explorer</title>
+  <style>
+    /* Font stack in requested order */
+    @font-face {
+      font-family: 'PoppinsMedium';
+      src: url('fonts/Poppins-Medium.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'GoNotoCJKCore';
+      src: url('fonts/GoNotoCJKCore.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'NotoSansMongolian';
+      src: url('fonts/NotoSansMongolian-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'NotoSansMath';
+      src: url('fonts/NotoSansMath-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'CtrlKanalt';
+      src: url('fonts/CtrlKanaltVF-2.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'GoNotoEuropeAmericas';
+      src: url('fonts/GoNotoEuropeAmericas.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'GoNotoAfricaMiddleEast';
+      src: url('fonts/GoNotoAfricaMiddeEast.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'GoNotoCurrent';
+      src: url('fonts/GoNotoCurrent-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Symbola';
+      src: url('fonts/Symbola-13_NotoSansArabic_Kannada_Telugu_GoNotoAncient.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'BabelStoneHan';
+      src: url('fonts/BabelStoneHan.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'OpenMoji';
+      src: url('fonts/OpenMoji-black-glyf_NotoSansNewTaiLue_Brahmi_Kaithi_TamilSupplement_ZnamennyMusic_GoNotoAncient.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Lateef';
+      src: url('fonts/Lateef-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Unifont';
+      src: url('fonts/unifont.otf') format('opentype');
+      font-display: swap;
+    }
+
+    :root {
+      color-scheme: dark;
+      --bg: #0f1117;
+      --panel: #161925;
+      --border: #2a2f3f;
+      --accent: #7ea2ff;
+      --text: #f3f4ff;
+      --muted: #a7abc4;
+      --field: #1c2030;
+      --hover: #23283a;
+      --active: #2c3350;
+      --cell: 48px;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f7f7fa;
+      --panel: #ffffff;
+      --border: #d8d8e0;
+      --accent: #3a61ff;
+      --text: #1f1f2e;
+      --muted: #616176;
+      --field: #f1f2f7;
+      --hover: #eef2ff;
+      --active: #dfe7ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'PoppinsMedium', 'GoNotoCJKCore', 'NotoSansMongolian', 'NotoSansMath', 'CtrlKanalt', 'GoNotoEuropeAmericas', 'GoNotoAfricaMiddleEast', 'GoNotoCurrent', 'Symbola', 'BabelStoneHan', 'OpenMoji', 'Lateef', 'Unifont', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+    }
+
+    aside {
+      width: 320px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .filter {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      background: var(--field);
+      color: var(--text);
+    }
+
+    #categoryList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #categoryList button {
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+
+    #categoryList button:hover {
+      background: var(--hover);
+    }
+
+    #categoryList button.active {
+      background: var(--active);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .toolbar {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .toolbar .spacer {
+      flex: 1 1 auto;
+    }
+
+    .toolbar h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .toolbar .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toolbar .search-wrap {
+      flex: 1 1 280px;
+      order: -1;
+      display: flex;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      background: var(--field);
+      color: var(--text);
+    }
+
+    .theme-toggle {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 42px;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(126, 162, 255, 0.12);
+    }
+
+    #characters {
+      padding: 12px;
+      overflow: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg);
+    }
+
+    .char-group {
+      background: transparent;
+    }
+
+    .group-title {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: var(--muted);
+      letter-spacing: 0.1px;
+    }
+
+    .chargrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(var(--cell), var(--cell)));
+      gap: 8px;
+      align-content: start;
+      justify-content: start;
+    }
+
+    .char {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--cell);
+      height: var(--cell);
+      padding: 4px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: calc(var(--cell) * 0.72);
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      overflow: hidden;
+    }
+
+    .char:active {
+      transform: translateY(1px);
+    }
+
+    .char:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .status {
+      padding: 12px 18px;
+      color: var(--muted);
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    @media (max-width: 960px) {
+      :root { --cell: 42px; }
+      aside { width: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <header>
+      <h1>Unicode Explorer</h1>
+      <p>Select a block from the Unicode NamesList and see every character rendered with the provided font stack.</p>
+    </header>
+    <div class="filter">
+      <input id="filterInput" type="search" placeholder="Filter blocks (e.g. Latin, Emoji)">
+    </div>
+    <ul id="categoryList" aria-label="Unicode blocks"></ul>
+  </aside>
+
+    <main>
+      <div class="toolbar">
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">🌙</button>
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="Search characters by name or note" aria-label="Search characters by name">
+        </div>
+        <h2 id="blockTitle">Loading blocks…</h2>
+        <span class="meta" id="blockRange"></span>
+        <span class="meta" id="blockCount"></span>
+      </div>
+    <div class="status" id="status">Parsing NamesList…</div>
+    <section id="characters" aria-live="polite"></section>
+  </main>
+
+  <script>
+    const listEl = document.getElementById('categoryList');
+    const filterInput = document.getElementById('filterInput');
+    const searchInput = document.getElementById('searchInput');
+    const charsEl = document.getElementById('characters');
+    const statusEl = document.getElementById('status');
+    const blockTitleEl = document.getElementById('blockTitle');
+    const blockRangeEl = document.getElementById('blockRange');
+    const blockCountEl = document.getElementById('blockCount');
+    const themeToggle = document.getElementById('themeToggle');
+
+    let blocks = [];
+    let activeButton = null;
+    let currentBlock = null;
+    let copyTimeout = null;
+    let currentTheme = 'dark';
+
+    function hex(cp) {
+      return 'U+' + cp.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    async function loadBlocks() {
+      const text = await fetch('NamesList.txt').then(r => r.text());
+      const lines = text.split(/\r?\n/);
+
+      const parsed = [];
+      let currentBlock = null;
+      let currentSubgroup = 'General';
+      let lastEntry = null;
+
+      for (const raw of lines) {
+        if (raw.startsWith('@@\t')) {
+          const parts = raw.split('\t').filter(Boolean);
+          if (parts.length < 4) continue;
+          const start = parseInt(parts[1], 16);
+          const name = parts[2];
+          const end = parseInt(parts[3], 16);
+          if (Number.isNaN(start) || Number.isNaN(end)) continue;
+          currentBlock = {
+            name,
+            start,
+            end,
+            label: `${hex(start)} – ${hex(end)}`,
+            codepoints: []
+          };
+          currentSubgroup = 'General';
+          lastEntry = null;
+          parsed.push(currentBlock);
+          continue;
+        }
+
+        // Subgroup headings inside a block: "@\t\tSubgroup name"
+        if (currentBlock && raw.startsWith('@\t\t')) {
+          currentSubgroup = raw.replace('@\t\t', '').trim() || 'General';
+          lastEntry = null;
+          continue;
+        }
+
+        // Code point lines: 4-6 hex digits at start followed by a tab.
+        const cpMatch = currentBlock ? raw.match(/^([0-9A-F]{4,6})\t(.+)/) : null;
+        if (cpMatch) {
+          const cp = parseInt(cpMatch[1], 16);
+          const name = cpMatch[2];
+          // Skip unassigned/reserved/control slots whose names begin with '<'
+          if (name && !name.startsWith('<')) {
+            lastEntry = {
+              cp,
+              name,
+              subgroup: currentSubgroup,
+              info: []
+            };
+            currentBlock.codepoints.push(lastEntry);
+          } else {
+            lastEntry = null;
+          }
+          continue;
+        }
+
+        // Supplementary lines for the last seen code point (aliases, notes, cross-references).
+        if (lastEntry && /^\t/.test(raw)) {
+          lastEntry.info.push(raw.trim());
+        }
+      }
+
+      // finalize counts
+      parsed.forEach(b => {
+        b.count = b.codepoints.length;
+      });
+
+      return parsed;
+    }
+
+    function renderList(data) {
+      listEl.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+      data.forEach((block, idx) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = `${block.name}`;
+        button.dataset.index = idx;
+        button.title = `${block.label} (${block.count} chars)`;
+        button.addEventListener('click', () => selectBlock(block, button));
+        fragment.appendChild(button);
+      });
+      listEl.appendChild(fragment);
+    }
+
+    function filterList(term) {
+      const lower = term.trim().toLowerCase();
+      const buttons = listEl.querySelectorAll('button');
+      buttons.forEach(btn => {
+        const match = btn.textContent.toLowerCase().includes(lower);
+        btn.style.display = match ? '' : 'none';
+      });
+    }
+
+    function applyTheme(mode) {
+      currentTheme = mode;
+      document.documentElement.dataset.theme = mode === 'light' ? 'light' : 'dark';
+      themeToggle.textContent = mode === 'light' ? '☀️' : '🌙';
+      localStorage.setItem('ue-theme', currentTheme);
+    }
+
+    function toggleTheme() {
+      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    function copyChar(ch) {
+      const done = () => {
+        setStatus(`Copied "${ch}" to clipboard.`);
+        clearTimeout(copyTimeout);
+        copyTimeout = setTimeout(() => {
+          if (currentBlock) {
+            setStatus(`Showing ${currentBlock.count.toLocaleString()} characters from ${currentBlock.name}.`);
+          }
+        }, 1800);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ch).then(done).catch(() => fallbackCopy(ch, done));
+      } else {
+        fallbackCopy(ch, done);
+      }
+    }
+
+    function fallbackCopy(ch, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = ch;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) { console.warn('Copy failed', e); }
+      document.body.removeChild(ta);
+      cb();
+    }
+
+    function makeCharSpan(item, label) {
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = String.fromCodePoint(item.cp);
+      span.title = label;
+      span.setAttribute('aria-label', label);
+      span.addEventListener('click', () => copyChar(span.textContent));
+      return span;
+    }
+
+    function renderSearchResults(query, matches) {
+      blockTitleEl.textContent = `Search: ${query}`;
+      blockRangeEl.textContent = '';
+      blockCountEl.textContent = `${matches.length} matches`;
+
+      if (!matches.length) {
+        clearChars(`No matches for \"${query}\".`);
+        setStatus('No search results.');
+        return;
+      }
+
+      const groups = [];
+      const map = new Map();
+      matches.forEach(item => {
+        const key = item.blockName;
+        if (!map.has(key)) {
+          const group = { label: `${item.blockName}`, items: [] };
+          map.set(key, group);
+          groups.push(group);
+        }
+        map.get(key).items.push(item);
+      });
+
+      charsEl.innerHTML = '';
+      const containers = groups.map(g => {
+        const section = document.createElement('section');
+        section.className = 'char-group';
+        const h = document.createElement('h3');
+        h.className = 'group-title';
+        h.textContent = g.label;
+        const grid = document.createElement('div');
+        grid.className = 'chargrid';
+        section.append(h, grid);
+        charsEl.appendChild(section);
+        return grid;
+      });
+
+      const batch = 512;
+      let gIndex = 0;
+      let i = 0;
+
+      function step() {
+        while (gIndex < groups.length) {
+          const group = groups[gIndex];
+          const grid = containers[gIndex];
+          const items = group.items;
+          const limit = Math.min(i + batch, items.length);
+          const frag = document.createDocumentFragment();
+          for (; i < limit; i++) {
+            const item = items[i];
+            const extras = item.info.length ? '\n' + item.info.join('\n') : '';
+            const location = item.subgroup ? `${item.blockName} › ${item.subgroup}` : item.blockName;
+            const label = `${hex(item.cp)} — ${item.name}\n${location}${extras}`;
+            frag.appendChild(makeCharSpan(item, label));
+          }
+          grid.appendChild(frag);
+          if (i < items.length) break;
+          i = 0;
+          gIndex++;
+        }
+
+        if (gIndex < groups.length) {
+          requestAnimationFrame(step);
+        } else {
+          setStatus(`Found ${matches.length.toLocaleString()} matches for \"${query}\".`);
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    function handleSearch(term) {
+      const q = term.trim().toLowerCase();
+      if (!q) {
+        if (currentBlock) selectBlock(currentBlock, activeButton);
+        return;
+      }
+
+      const matches = [];
+      blocks.forEach(block => {
+        block.codepoints.forEach(item => {
+          const hay = (item.name + ' ' + item.info.join(' ')).toLowerCase();
+          if (hay.includes(q)) {
+            matches.push({
+              ...item,
+              blockName: block.name,
+              blockLabel: block.label
+            });
+          }
+        });
+      });
+
+      renderSearchResults(term.trim(), matches);
+    }
+
+    function clearChars(message = '') {
+      charsEl.innerHTML = '';
+      if (message) {
+        const p = document.createElement('div');
+        p.textContent = message;
+        p.style.padding = '16px';
+        charsEl.appendChild(p);
+      }
+    }
+
+    function groupBySubgroup(entries) {
+      const groups = [];
+      const map = new Map();
+      entries.forEach(item => {
+        const key = item.subgroup || 'General';
+        if (!map.has(key)) {
+          const group = { label: key, items: [] };
+          map.set(key, group);
+          groups.push(group);
+        }
+        map.get(key).items.push(item);
+      });
+      return groups;
+    }
+
+    function selectBlock(block, button) {
+      if (activeButton) activeButton.classList.remove('active');
+      activeButton = button;
+      if (activeButton) activeButton.classList.add('active');
+      currentBlock = block;
+
+      blockTitleEl.textContent = block.name;
+      blockRangeEl.textContent = block.label;
+      blockCountEl.textContent = `${block.count} assigned code points`;
+
+      clearChars();
+      setStatus(`Rendering ${block.count.toLocaleString()} characters…`);
+      renderCharacters(block);
+    }
+
+    function renderCharacters(block) {
+      charsEl.innerHTML = '';
+      const groups = groupBySubgroup(block.codepoints);
+      if (!groups.length) {
+        clearChars('No assigned characters in this block.');
+        return;
+      }
+
+      charsEl.innerHTML = '';
+      const containers = groups.map(g => {
+        const section = document.createElement('section');
+        section.className = 'char-group';
+        const h = document.createElement('h3');
+        h.className = 'group-title';
+        h.textContent = g.label;
+        const grid = document.createElement('div');
+        grid.className = 'chargrid';
+        section.append(h, grid);
+        charsEl.appendChild(section);
+        return grid;
+      });
+
+      const batch = 512;
+      let gIndex = 0;
+      let i = 0;
+
+      function step() {
+        while (gIndex < groups.length) {
+          const group = groups[gIndex];
+          const grid = containers[gIndex];
+          const items = group.items;
+          const limit = Math.min(i + batch, items.length);
+          const frag = document.createDocumentFragment();
+          for (; i < limit; i++) {
+            const item = items[i];
+            const extras = item.info.length ? '\n' + item.info.join('\n') : '';
+            const label = `${hex(item.cp)} — ${item.name}${extras}`;
+            frag.appendChild(makeCharSpan(item, label));
+          }
+          grid.appendChild(frag);
+          if (i < items.length) break; // continue this group next frame
+          // finished this group
+          i = 0;
+          gIndex++;
+        }
+
+        if (gIndex < groups.length) {
+          requestAnimationFrame(step);
+        } else {
+          setStatus(`Showing ${block.count.toLocaleString()} characters from ${block.name}.`);
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    async function init() {
+      try {
+        setStatus('Parsing NamesList…');
+        applyTheme(localStorage.getItem('ue-theme') || 'dark');
+        blocks = (await loadBlocks()).filter(b => b.count > 0);
+        if (!blocks.length) throw new Error('No block data found.');
+        renderList(blocks);
+        const firstBlock = blocks[0];
+        const firstBtn = listEl.querySelector(`button[data-index=\"${blocks.indexOf(firstBlock)}\"]`);
+        selectBlock(firstBlock, firstBtn);
+        setStatus('Loaded NamesList blocks.');
+      } catch (err) {
+        console.error(err);
+        setStatus('Failed to load NamesList.txt');
+        clearChars('Could not parse NamesList.txt');
+      }
+    }
+
+    filterInput.addEventListener('input', (e) => filterList(e.target.value));
+    searchInput.addEventListener('input', (e) => handleSearch(e.target.value));
+    themeToggle.addEventListener('click', toggleTheme);
+    init();
+  </script>
+</body>
+</html>
