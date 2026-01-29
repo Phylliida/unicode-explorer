@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unicode Explorer</title>
+  <!-- Preload the UI + core CJK fonts so the first render doesn't flash -->
+  <link rel="preload" href="fonts/Poppins-Medium.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/GoNotoCJKCore.ttf" as="font" type="font/ttf" crossorigin>
   <style>
     /* Font stack in requested order */
     @font-face {
@@ -126,7 +129,8 @@
       --hover: #23283a;
       --active: #2c3350;
       --cell: 48px;
-      --fallback-stack: '';
+      /* Use a stable system fallback so text stays visible before custom fonts finish loading */
+      --fallback-stack: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', 'Noto Sans', sans-serif;
       --emoji-font: 'OpenMoji', 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Twemoji Mozilla';
     }
 
