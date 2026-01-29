@@ -86,6 +86,34 @@
       src: url('fonts/unifont.otf') format('opentype');
       font-display: swap;
     }
+    /* Emoji font bundle (local copies for reliable toggling) */
+    @font-face {
+      font-family: 'OpenMoji';
+      src: url('fonts/emoji-fonts/OpenMoji-black-glyf_NotoSansNewTaiLue_Brahmi_Kaithi_TamilSupplement_ZnamennyMusic_GoNotoAncient.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Noto Color Emoji';
+      src: url('fonts/emoji-fonts/NotoColorEmoji-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Segoe UI Emoji';
+      src: url('fonts/emoji-fonts/seguiemj.ttf') format('truetype');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Apple Color Emoji';
+      /* Prefer system Apple font; fallback to bundled fixed TTFs for non-Apple browsers. */
+      src: local('Apple Color Emoji'), local('Apple Color Emoji UI'),
+           url("fonts/emoji-fonts/AppleColorEmoji-bitmap-web.woff2") format('woff2');
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Twemoji Mozilla';
+      src: url('fonts/emoji-fonts/TwitterColorEmoji-SVGinOT.ttf') format('truetype');
+      font-display: swap;
+    }
 
     :root {
       color-scheme: dark;
@@ -100,6 +128,7 @@
       --active: #2c3350;
       --cell: 48px;
       --fallback-stack: '';
+      --emoji-font: 'OpenMoji', 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Twemoji Mozilla';
     }
 
     :root[data-theme="light"] {
@@ -115,13 +144,18 @@
       --active: #dfe7ff;
     }
 
+    :root[data-emoji="native"] {
+      --emoji-font: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'OpenMoji';
+    }
+
     * {
       box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      font-family: 'PoppinsMedium', 'GoNotoCJKCore', 'NotoSansMongolian', 'NotoSansMath', 'CtrlKanalt', 'GoNotoEuropeAmericas', 'GoNotoAfricaMiddleEast', 'GoNotoCurrent', 'Symbola', 'BabelStoneHan', 'OpenMoji', 'Lateef', 'UnicodiaSesh', 'NewGardiner', 'NewGardinerNonCore', var(--fallback-stack), 'Unifont', sans-serif;
+      /* Put the emoji stack first so toggling actually swaps glyph sources before monochrome fallbacks like Symbola. */
+      font-family: var(--emoji-font), 'PoppinsMedium', 'GoNotoCJKCore', 'NotoSansMongolian', 'NotoSansMath', 'CtrlKanalt', 'GoNotoEuropeAmericas', 'GoNotoAfricaMiddleEast', 'GoNotoCurrent', 'Symbola', 'BabelStoneHan', 'Lateef', 'UnicodiaSesh', 'NewGardiner', 'NewGardinerNonCore', var(--fallback-stack), 'Unifont', sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100vh;
@@ -370,6 +404,7 @@
     <main>
       <div class="toolbar">
         <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">🌙</button>
+        <button id="emojiToggle" class="theme-toggle" type="button" aria-label="Toggle emoji font" style="display:none">😊</button>
         <div class="search-wrap">
           <input id="searchInput" type="search" placeholder="Search characters by name or note" aria-label="Search characters by name">
         </div>
@@ -391,6 +426,7 @@
     const blockRangeEl = document.getElementById('blockRange');
     const blockCountEl = document.getElementById('blockCount');
     const themeToggle = document.getElementById('themeToggle');
+    const emojiToggle = document.getElementById('emojiToggle');
 
     let blocks = [];
     let activeButton = null;
@@ -399,14 +435,63 @@
     let currentTheme = 'dark';
     let hashLocked = false;
     let isSearchView = false;
+    let emojiMode = 'openmoji';
+    let emojiAvailable = false;
+    const emojiModes = [
+      { id: 'openmoji', label: 'OM', title: 'OpenMoji (bundled)', stack: `'OpenMoji', 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Twemoji Mozilla'` },
+      { id: 'noto',     label: 'NC', title: 'Noto Color Emoji',    stack: `'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Twemoji Mozilla', 'OpenMoji'` },
+      { id: 'segoe',    label: 'MS', title: 'Segoe UI Emoji',      stack: `'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji', 'Twemoji Mozilla', 'OpenMoji'` },
+      { id: 'apple',    label: 'AP', title: 'Apple Color Emoji',   stack: `'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'OpenMoji'` },
+      { id: 'twemoji',  label: 'TW', title: 'Twemoji Mozilla',     stack: `'Twemoji Mozilla', 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'OpenMoji'` }
+    ];
 
     function readHashState() {
       const params = new URLSearchParams(location.hash.slice(1));
       return {
         blockName: params.get('b'),
         search: params.get('q') || '',
-        theme: params.get('t')
+        theme: params.get('t'),
+        emoji: params.get('e')
       };
+    }
+
+    function applyEmojiMode(mode) {
+      const found = emojiModes.find(m => m.id === mode) || emojiModes[0];
+      emojiMode = found.id;
+      document.documentElement.dataset.emoji = emojiMode;
+      document.documentElement.style.setProperty('--emoji-font', found.stack);
+      const next = emojiModes[(emojiModes.indexOf(found) + 1) % emojiModes.length];
+      emojiToggle.textContent = found.label;
+      emojiToggle.title = `${found.title} (click for ${next.title})`;
+      localStorage.setItem('ue-emoji', emojiMode);
+      updateHashState();
+    }
+
+    function toggleEmojiMode() {
+      const currentIdx = emojiModes.findIndex(m => m.id === emojiMode);
+      const next = emojiModes[(currentIdx + 1) % emojiModes.length];
+      applyEmojiMode(next.id);
+    }
+
+    function isEmojiCodepoint(cp) {
+      return (
+        (cp >= 0x1F300 && cp <= 0x1FAFF) || // symbols & pictographs + emoji extensions
+        (cp >= 0x1F600 && cp <= 0x1F64F) || // emoticons
+        (cp >= 0x1F680 && cp <= 0x1F6FF) || // transport & map
+        (cp >= 0x2600 && cp <= 0x27BF)      // misc symbols/dingbats
+      );
+    }
+
+    function blockHasEmoji(block) {
+      return block.codepoints.some(item => isEmojiCodepoint(item.cp));
+    }
+
+    function matchesHaveEmoji(matches) {
+      return matches.some(item => isEmojiCodepoint(item.cp));
+    }
+
+    function updateEmojiToggleVisibility() {
+      emojiToggle.style.display = emojiAvailable ? '' : 'none';
     }
 
     function updateHashState() {
@@ -416,6 +501,7 @@
       const q = searchInput.value.trim();
       if (isSearchView && q) params.set('q', q);
       if (currentTheme) params.set('t', currentTheme);
+      if (emojiMode) params.set('e', emojiMode);
       const hash = params.toString();
       const target = hash ? `#${hash}` : '';
       if (location.hash !== target) {
@@ -766,6 +852,8 @@
       blockCountEl.textContent = `${matches.length} matches`;
 
       if (!matches.length) {
+        emojiAvailable = false;
+        updateEmojiToggleVisibility();
         clearChars(`No matches for \"${query}\".`);
         setStatus('No search results.');
         return;
@@ -829,6 +917,8 @@
       }
 
       requestAnimationFrame(step);
+      emojiAvailable = matchesHaveEmoji(matches);
+      updateEmojiToggleVisibility();
     }
 
     let lastSearch = '';
@@ -901,6 +991,8 @@
 
       clearChars();
       setStatus(`Rendering ${block.count.toLocaleString()} characters…`);
+      emojiAvailable = blockHasEmoji(block);
+      updateEmojiToggleVisibility();
       updateHashState();
       renderCharacters(block);
     }
@@ -966,6 +1058,7 @@
         setStatus('Parsing NamesList…');
         const hashState = readHashState();
         hashLocked = true;
+        applyEmojiMode(hashState.emoji || localStorage.getItem('ue-emoji') || 'openmoji');
         applyTheme(hashState.theme || localStorage.getItem('ue-theme') || 'dark');
         blocks = (await loadBlocks()).filter(b => b.count > 0);
         if (!blocks.length) throw new Error('No block data found.');
@@ -999,6 +1092,7 @@
       searchTimer = setTimeout(() => handleSearch(e.target.value), 120);
     });
     themeToggle.addEventListener('click', toggleTheme);
+    emojiToggle.addEventListener('click', toggleEmojiMode);
     init();
   </script>
 </body>
