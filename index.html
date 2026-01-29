@@ -67,6 +67,21 @@
       font-display: swap;
     }
     @font-face {
+        font-family: 'UnicodiaSesh';
+        src: url("fonts/UnicodiaSesh.ttf") format("truetype");
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'NewGardiner';
+        src: url("fonts/NewGardiner.ttf") format("truetype");
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'NewGardinerNonCore';
+        src: url("fonts/NewGardinerNonCore.ttf") format("truetype");
+        font-display: swap;
+    }
+    @font-face {
       font-family: 'Unifont';
       src: url('fonts/unifont.otf') format('opentype');
       font-display: swap;
@@ -84,6 +99,7 @@
       --hover: #23283a;
       --active: #2c3350;
       --cell: 48px;
+      --fallback-stack: '';
     }
 
     :root[data-theme="light"] {
@@ -105,7 +121,7 @@
 
     body {
       margin: 0;
-      font-family: 'PoppinsMedium', 'GoNotoCJKCore', 'NotoSansMongolian', 'NotoSansMath', 'CtrlKanalt', 'GoNotoEuropeAmericas', 'GoNotoAfricaMiddleEast', 'GoNotoCurrent', 'Symbola', 'BabelStoneHan', 'OpenMoji', 'Lateef', 'Unifont', sans-serif;
+      font-family: 'PoppinsMedium', 'GoNotoCJKCore', 'NotoSansMongolian', 'NotoSansMath', 'CtrlKanalt', 'GoNotoEuropeAmericas', 'GoNotoAfricaMiddleEast', 'GoNotoCurrent', 'Symbola', 'BabelStoneHan', 'OpenMoji', 'Lateef', 'UnicodiaSesh', 'NewGardiner', 'NewGardinerNonCore', var(--fallback-stack), 'Unifont', sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100vh;
@@ -152,6 +168,25 @@
       font-size: 14px;
       background: var(--field);
       color: var(--text);
+    }
+
+    #categoryList li {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .group-heading {
+      padding: 8px 16px 6px;
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-bottom: 1px solid var(--border);
     }
 
     #categoryList {
@@ -362,6 +397,147 @@
     let currentBlock = null;
     let copyTimeout = null;
     let currentTheme = 'dark';
+    let hashLocked = false;
+    const fallbackFiles = [
+      'BabelStoneHanBasic.ttf',
+      'BabelStoneHanExtra.ttf',
+      'BabelStonePseudographica.ttf',
+      'BabelStoneTibetanSlim.ttf',
+      'DejaVuSerif.ttf',
+      'Kanchenjunga-Regular.ttf',
+      'Kedebideri-Regular.ttf',
+      'MezenetsUnicode.otf',
+      'Mingzat-Regular.ttf',
+      'NewGardiner.ttf',
+      'NotoFangsongKSSVertical-Regular.ttf',
+      'NotoMusic-Regular.ttf',
+      'NotoNaskhArabic-Regular.ttf',
+      'NotoSansAdlam-Regular.ttf',
+      'NotoSansAnatolianHieroglyphs-Regular.otf',
+      'NotoSansBamum-Regular.ttf',
+      'NotoSansBatak-Regular.ttf',
+      'NotoSansBhaiksuki-Regular.ttf',
+      'NotoSansBrahmi-Regular.ttf',
+      'NotoSansBuginese-Regular.ttf',
+      'NotoSansBuhid-Regular.ttf',
+      'NotoSansCanadianAboriginal-Regular.ttf',
+      'NotoSansChakma-Regular.ttf',
+      'NotoSansCham-Regular.ttf',
+      'NotoSansCuneiform-Regular.ttf',
+      'NotoSansElbasan-Regular.ttf',
+      'NotoSansGrantha-Regular.ttf',
+      'NotoSansGunjalaGondi-Regular.ttf',
+      'NotoSansHanifiRohingya-Regular.ttf',
+      'NotoSansHanunoo-Regular.ttf',
+      'NotoSansIndicSiyaqNumbers-Regular.ttf',
+      'NotoSansJavanese-Regular.ttf',
+      'NotoSansKaithi-Regular.ttf',
+      'NotoSansKawi-Regular.ttf',
+      'NotoSansKayahLi-Regular.ttf',
+      'NotoSansKharoshthi-Regular.ttf',
+      'NotoSansKhojki-Regular.ttf',
+      'NotoSansKhudawadi-Regular.ttf',
+      'NotoSansLimbu-Regular.ttf',
+      'NotoSansMahajani-Regular.ttf',
+      'NotoSansMalayalamUI-Light.ttf',
+      'NotoSansMandaic-Regular.ttf',
+      'NotoSansManichaean-Regular.ttf',
+      'NotoSansMarchen-Regular.ttf',
+      'NotoSansMasaramGondi-Regular.ttf',
+      'NotoSansMath-Regular.ttf',
+      'NotoSansMeeteiMayek-Regular.ttf',
+      'NotoSansMeroitic-Regular.ttf',
+      'NotoSansMiao-Regular.ttf',
+      'NotoSansModi-Regular.ttf',
+      'NotoSansMongolian-Regular.ttf',
+      'NotoSansNandinagari-Regular.ttf',
+      'NotoSansNewa-Regular.ttf',
+      'NotoSansNKo-Regular.ttf',
+      'NotoSansOlChiki-Regular.ttf',
+      'NotoSansOldPermic-Regular.ttf',
+      'NotoSansOldSogdian-Regular.ttf',
+      'NotoSansPahawhHmong-Regular.ttf',
+      'NotoSansRejang-Regular.ttf',
+      'NotoSansSamaritan-Regular.ttf',
+      'NotoSansSaurashtra-Regular.ttf',
+      'NotoSansSharada-Regular.ttf',
+      'NotoSansSiddham-Regular.ttf',
+      'NotoSansSinhala-Regular.ttf',
+      'NotoSansSogdian-Regular.ttf',
+      'NotoSansSoyombo-Regular.ttf',
+      'NotoSansSunuwar-Regular.ttf',
+      'NotoSansSymbols2-Regular.ttf',
+      'NotoSansSymbols-Regular.ttf',
+      'NotoSansTagbanwa-Regular.ttf',
+      'NotoSansTaiViet-Regular.ttf',
+      'NotoSansTakri-Regular.ttf',
+      'NotoSansTamilSupplement-Regular.ttf',
+      'NotoSansTeluguUI-Light.ttf',
+      'NotoSansTirhuta-Regular.ttf',
+      'NotoSansZanabazarSquare-Regular.ttf',
+      'NotoSerifAhom-Regular.ttf',
+      'NotoSerifArmenian-Regular.ttf',
+      'NotoSerifBalinese-Regular.ttf',
+      'NotoSerifBengali-Regular.ttf',
+      'NotoSerifDevanagari-Regular.ttf',
+      'NotoSerifDivesAkuru-Regular.ttf',
+      'NotoSerifDogra-Regular.ttf',
+      'NotoSerifEthiopic-Regular.ttf',
+      'NotoSerifGeorgian-Regular.ttf',
+      'NotoSerifGujarati-Regular.ttf',
+      'NotoSerifGurmukhi-Regular.ttf',
+      'NotoSerifHebrew-Regular.ttf',
+      'NotoSerifKhmer-Regular.ttf',
+      'NotoSerifKhojki-Regular.ttf',
+      'NotoSerifNPHmong-Regular.ttf',
+      'NotoSerifOldUyghur-Regular.ttf',
+      'NotoSerif-Regular.ttf',
+      'NotoSerifTaiYo-Regular.ttf',
+      'NotoSerifTangut-Regular.ttf',
+      'NotoSerifYezidi-Regular.ttf',
+      'NotoTraditionalNushu-Light.ttf',
+      'OldHungarian.ttf',
+      'PadaukBook-Regular.ttf',
+      'ScheherazadeNew-Regular.ttf',
+      'SertoAntochBible_2020_Release.ttf',
+      'Shafarik-Regular.ttf',
+      'TangsaLakhumUnicode.ttf',
+      'UFSArabicFixup.ttf',
+      'UFSTangutFixup.ttf',
+      'UnicodiaDaarage.otf',
+      'UnicodiaDevaFixup-Regular.ttf',
+      'UnicodiaFunky.ttf',
+      'UnicodiaHan.ttf',
+      'UnicodiaLanna.otf',
+      'UnicodiaMongolFixup.ttf',
+      'UnicodiaMusicFixup.ttf',
+      'UnicodiaSengBuhan-Regular.ttf',
+      'UnicodiaSesh.ttf',
+      'UnicodiaSutton-Regular.ttf',
+      'UtoNumberFixup.ttf',
+      'UtoSansFranken.ttf',
+      'UtoSansKR-Regular.ttf',
+      'UtoSansSundanese-Regular.ttf',
+      'UtoSansSylotiNagri-Regular.ttf',
+      'UtoSansTagalog-Regular.ttf',
+      'UtoSerifKannada-Regular.ttf',
+      'UtoSerifOriya-Regular.ttf'
+    ];
+
+    function registerFallbackFonts() {
+      const entries = fallbackFiles.map(file => {
+        const family = file.replace(/\.(ttf|otf)$/i, '');
+        const format = file.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+        return { family, file, format };
+      });
+
+      const style = document.createElement('style');
+      style.setAttribute('data-fallback-fonts', '');
+      style.textContent = entries.map(({ family, file, format }) => `@font-face { font-family: '${family}'; src: url('fonts/fallback/${file}') format('${format}'); font-display: swap; }`).join('\n');
+      document.head.appendChild(style);
+      document.documentElement.style.setProperty('--fallback-stack', entries.map(e => `'${e.family}'`).join(', '));
+    }
+    registerFallbackFonts();
 
     function hex(cp) {
       return 'U+' + cp.toString(16).toUpperCase().padStart(4, '0');
@@ -437,32 +613,74 @@
       // finalize counts
       parsed.forEach(b => {
         b.count = b.codepoints.length;
+        b.codepoints.forEach(cp => {
+          cp.hay = (cp.name + ' ' + cp.info.join(' ')).toLowerCase();
+        });
       });
 
       return parsed;
     }
 
+    function letterKey(name) {
+      const first = name.trim()[0];
+      if (first && /[A-Za-z]/.test(first)) return first.toUpperCase();
+      return '#';
+    }
+
+    function letterId(letter) {
+      return letter === '#' ? 'group-symbol' : `group-${letter}`;
+    }
+
     function renderList(data) {
       listEl.innerHTML = '';
-      const fragment = document.createDocumentFragment();
+      const groups = new Map();
       data.forEach((block, idx) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = `${block.name}`;
-        button.dataset.index = idx;
-        button.title = `${block.label} (${block.count} chars)`;
-        button.addEventListener('click', () => selectBlock(block, button));
-        fragment.appendChild(button);
+        const letter = letterKey(block.name);
+        if (!groups.has(letter)) groups.set(letter, []);
+        groups.get(letter).push({ block, idx });
+      });
+
+      const letters = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b, 'en'));
+
+      const fragment = document.createDocumentFragment();
+      letters.forEach(letter => {
+        const heading = document.createElement('li');
+        heading.className = 'group-heading';
+        heading.id = letterId(letter);
+        heading.dataset.letter = letter;
+        heading.textContent = letter === '#' ? '0-9 / Symbols' : letter;
+        fragment.appendChild(heading);
+
+        groups.get(letter).forEach(({ block, idx }) => {
+          const item = document.createElement('li');
+          item.dataset.name = block.name.toLowerCase();
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = `${block.name}`;
+          button.dataset.index = idx;
+          button.title = `${block.label} (${block.count} chars)`;
+          button.addEventListener('click', () => selectBlock(block, button));
+          item.appendChild(button);
+          fragment.appendChild(item);
+        });
       });
       listEl.appendChild(fragment);
     }
 
     function filterList(term) {
       const lower = term.trim().toLowerCase();
-      const buttons = listEl.querySelectorAll('button');
-      buttons.forEach(btn => {
-        const match = btn.textContent.toLowerCase().includes(lower);
-        btn.style.display = match ? '' : 'none';
+      const headings = listEl.querySelectorAll('.group-heading');
+
+      headings.forEach(heading => {
+        let hasVisible = false;
+        let el = heading.nextElementSibling;
+        while (el && !el.classList.contains('group-heading')) {
+          const match = !lower || el.dataset.name.includes(lower);
+          el.style.display = match ? '' : 'none';
+          if (match) hasVisible = true;
+          el = el.nextElementSibling;
+        }
+        heading.style.display = hasVisible ? '' : 'none';
       });
     }
 
@@ -588,8 +806,13 @@
       requestAnimationFrame(step);
     }
 
+    let lastSearch = '';
+
     function handleSearch(term) {
       const q = term.trim().toLowerCase();
+      if (q === lastSearch) return;
+      lastSearch = q;
+
       if (!q) {
         if (currentBlock) selectBlock(currentBlock, activeButton);
         return;
@@ -598,8 +821,7 @@
       const matches = [];
       blocks.forEach(block => {
         block.codepoints.forEach(item => {
-          const hay = (item.name + ' ' + item.info.join(' ')).toLowerCase();
-          if (hay.includes(q)) {
+          if (item.hay.includes(q)) {
             matches.push({
               ...item,
               blockName: block.name,
@@ -641,6 +863,7 @@
       if (activeButton) activeButton.classList.remove('active');
       activeButton = button;
       if (activeButton) activeButton.classList.add('active');
+      if (activeButton) activeButton.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       currentBlock = block;
 
       blockTitleEl.textContent = block.name;
@@ -727,7 +950,11 @@
     }
 
     filterInput.addEventListener('input', (e) => filterList(e.target.value));
-    searchInput.addEventListener('input', (e) => handleSearch(e.target.value));
+    let searchTimer;
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => handleSearch(e.target.value), 120);
+    });
     themeToggle.addEventListener('click', toggleTheme);
     init();
   </script>
