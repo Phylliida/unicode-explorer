@@ -398,6 +398,30 @@
     let copyTimeout = null;
     let currentTheme = 'dark';
     let hashLocked = false;
+    let isSearchView = false;
+
+    function readHashState() {
+      const params = new URLSearchParams(location.hash.slice(1));
+      return {
+        blockName: params.get('b'),
+        search: params.get('q') || '',
+        theme: params.get('t')
+      };
+    }
+
+    function updateHashState() {
+      if (hashLocked) return;
+      const params = new URLSearchParams();
+      if (currentBlock) params.set('b', currentBlock.name);
+      const q = searchInput.value.trim();
+      if (isSearchView && q) params.set('q', q);
+      if (currentTheme) params.set('t', currentTheme);
+      const hash = params.toString();
+      const target = hash ? `#${hash}` : '';
+      if (location.hash !== target) {
+        location.hash = target;
+      }
+    }
     const fallbackFiles = [
       'BabelStoneHanBasic.ttf',
       'BabelStoneHanExtra.ttf',
@@ -689,6 +713,7 @@
       document.documentElement.dataset.theme = mode === 'light' ? 'light' : 'dark';
       themeToggle.textContent = mode === 'light' ? '☀️' : '🌙';
       localStorage.setItem('ue-theme', currentTheme);
+      updateHashState();
     }
 
     function toggleTheme() {
@@ -814,10 +839,12 @@
       lastSearch = q;
 
       if (!q) {
+        isSearchView = false;
         if (currentBlock) selectBlock(currentBlock, activeButton);
         return;
       }
 
+      isSearchView = true;
       const matches = [];
       blocks.forEach(block => {
         block.codepoints.forEach(item => {
@@ -832,6 +859,7 @@
       });
 
       renderSearchResults(term.trim(), matches);
+      updateHashState();
     }
 
     function clearChars(message = '') {
@@ -860,6 +888,7 @@
     }
 
     function selectBlock(block, button) {
+      isSearchView = false;
       if (activeButton) activeButton.classList.remove('active');
       activeButton = button;
       if (activeButton) activeButton.classList.add('active');
@@ -872,6 +901,7 @@
 
       clearChars();
       setStatus(`Rendering ${block.count.toLocaleString()} characters…`);
+      updateHashState();
       renderCharacters(block);
     }
 
@@ -934,16 +964,29 @@
     async function init() {
       try {
         setStatus('Parsing NamesList…');
-        applyTheme(localStorage.getItem('ue-theme') || 'dark');
+        const hashState = readHashState();
+        hashLocked = true;
+        applyTheme(hashState.theme || localStorage.getItem('ue-theme') || 'dark');
         blocks = (await loadBlocks()).filter(b => b.count > 0);
         if (!blocks.length) throw new Error('No block data found.');
         renderList(blocks);
-        const firstBlock = blocks[0];
-        const firstBtn = listEl.querySelector(`button[data-index=\"${blocks.indexOf(firstBlock)}\"]`);
-        selectBlock(firstBlock, firstBtn);
+        let initialBlock = blocks[0];
+        if (hashState.blockName) {
+          const found = blocks.find(b => b.name === hashState.blockName);
+          if (found) initialBlock = found;
+        }
+        const initialBtn = listEl.querySelector(`button[data-index=\"${blocks.indexOf(initialBlock)}\"]`);
+        selectBlock(initialBlock, initialBtn);
+        if (hashState.search) {
+          searchInput.value = hashState.search;
+          handleSearch(hashState.search);
+        }
+        hashLocked = false;
+        updateHashState();
         setStatus('Loaded NamesList blocks.');
       } catch (err) {
         console.error(err);
+        hashLocked = false;
         setStatus('Failed to load NamesList.txt');
         clearChars('Could not parse NamesList.txt');
       }
