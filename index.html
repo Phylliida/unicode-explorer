@@ -386,6 +386,48 @@
       background: var(--panel);
     }
 
+    #fontLoader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .loader-box {
+      width: min(420px, 80vw);
+      text-align: center;
+    }
+
+    .loader-label {
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
+    .loader-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--field);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    #loaderFill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 120ms ease;
+    }
+
+    #loaderText {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     @media (max-width: 960px) {
       :root { --cell: 42px; }
       aside { width: 260px; }
@@ -418,6 +460,14 @@
     <div class="status" id="status">Parsing NamesList…</div>
     <section id="characters" aria-live="polite"></section>
   </main>
+
+  <div id="fontLoader" role="status" aria-live="polite">
+    <div class="loader-box">
+      <div class="loader-label">Loading fonts…</div>
+      <div class="loader-bar"><div id="loaderFill"></div></div>
+      <div id="loaderText">0 / 0</div>
+    </div>
+  </div>
 
   <script>
     const listEl = document.getElementById('categoryList');
@@ -651,6 +701,34 @@
       document.documentElement.style.setProperty('--fallback-stack', entries.map(e => `'${e.family}'`).join(', '));
     }
     registerFallbackFonts();
+
+    const fontLoaderEl = document.getElementById('fontLoader');
+    const loaderFillEl = document.getElementById('loaderFill');
+    const loaderTextEl = document.getElementById('loaderText');
+
+    // Explicitly load every @font-face up front (they're lazy otherwise, which
+    // caused glyphs to swap in waves as each font arrived). Failures are
+    // counted as done so the bar always completes.
+    function loadAllFonts() {
+      const faces = Array.from(document.fonts);
+      const total = faces.length;
+      let done = 0;
+      const update = () => {
+        loaderTextEl.textContent = `${done} / ${total}`;
+        loaderFillEl.style.width = total ? `${(done / total) * 100}%` : '100%';
+      };
+      update();
+      const queue = faces.slice();
+      const worker = async () => {
+        while (queue.length) {
+          const face = queue.shift();
+          try { await face.load(); } catch (err) { console.warn('Font failed to load:', face.family, err); }
+          done++;
+          update();
+        }
+      };
+      return Promise.all(Array.from({ length: 8 }, worker));
+    }
 
     function hex(cp) {
       return 'U+' + cp.toString(16).toUpperCase().padStart(4, '0');
@@ -1063,6 +1141,7 @@
         hashLocked = true;
         applyEmojiMode(hashState.emoji || localStorage.getItem('ue-emoji') || 'openmoji');
         applyTheme(hashState.theme || localStorage.getItem('ue-theme') || 'dark');
+        const fontsDone = loadAllFonts();
         blocks = (await loadBlocks()).filter(b => b.count > 0);
         if (!blocks.length) throw new Error('No block data found.');
         renderList(blocks);
@@ -1072,6 +1151,8 @@
           if (found) initialBlock = found;
         }
         const initialBtn = listEl.querySelector(`button[data-index=\"${blocks.indexOf(initialBlock)}\"]`);
+        await fontsDone;
+        fontLoaderEl.remove();
         selectBlock(initialBlock, initialBtn);
         if (hashState.search) {
           searchInput.value = hashState.search;
@@ -1083,6 +1164,7 @@
       } catch (err) {
         console.error(err);
         hashLocked = false;
+        if (fontLoaderEl.isConnected) fontLoaderEl.remove();
         setStatus('Failed to load NamesList.txt');
         clearChars('Could not parse NamesList.txt');
       }
